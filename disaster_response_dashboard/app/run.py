@@ -4,6 +4,8 @@ import pandas as pd
 
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import re
 
 from flask import Flask
 from flask import render_template, request, jsonify
@@ -14,8 +16,16 @@ from sqlalchemy import create_engine
 
 app = Flask(__name__)
 
+REPLACE_BY_SPACE_RE = re.compile('[/(){}\[\]\|@,;]')
+BAD_SYMBOLS_RE = re.compile('[^0-9a-zA-Z #+_]')
+
 def tokenize(text):
+
     tokens = word_tokenize(text)
+    text = REPLACE_BY_SPACE_RE.sub(' ', text) # replace REPLACE_BY_SPACE_RE symbols by space in text
+    text = BAD_SYMBOLS_RE.sub('', text) # delete symbols which are in BAD_SYMBOLS_RE from text
+
+    tokens = [w for w in tokens if w not in stopwords.words('english')]
     lemmatizer = WordNetLemmatizer()
 
     clean_tokens = []
@@ -25,9 +35,14 @@ def tokenize(text):
 
     return clean_tokens
 
+
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('DisasterResponse', engine)
+Y = df.drop(columns = ['message', 'genre', 'id', 'original'], axis = 1)
+del_cols = [i for i in Y.sum()[Y.sum().isin([0, len(Y)])].index]
+Y = Y.drop(columns = del_cols)
+
 
 # load model
 model = joblib.load("../models/classifier.pkl")
@@ -42,6 +57,11 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+    
+    category_names = sorted(Y,  key = lambda x: Y[x].sum(), reverse=True)
+    category_counts = []
+    for i in category_names:
+        category_counts.append(Y[i].sum())
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -61,6 +81,25 @@ def index():
                 },
                 'xaxis': {
                     'title': "Genre"
+                }
+            }
+        }, 
+        
+        {
+            'data': [
+                Bar(
+                    x=category_names,
+                    y=category_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Request Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Categories"
                 }
             }
         }

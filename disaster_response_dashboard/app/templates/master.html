@@ -52,19 +52,21 @@
     </div>
 </div>
 
-<div class="container">
+<div class="container" style = "width: 50%;">
     {% block content %}
         <div class="page-header">
             <h1 class="text-center">Overview of Training Dataset</h1>
         </div>
     {% endblock %}
-
-    {% for id in ids %}
-        <div id="{{id}}"></div>
-    {% endfor %}
 </div>
   
+<div class="container" style = "width: 90%;">
+    {% for id in ids %}
+        <div id="{{id}}" style = "margin-bottom: 2em;"></div>
+    {% endfor %}
+</div>
 
+  
 <script type="text/javascript">
     const graphs = {{graphJSON | safe}};
     const ids = {{ids | safe}};

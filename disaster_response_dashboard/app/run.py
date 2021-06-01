@@ -13,6 +13,9 @@ from plotly.graph_objs import Bar
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
+import nltk
+nltk.download(['punkt', 'wordnet', 'stopwords'])
+
 
 app = Flask(__name__)
 
